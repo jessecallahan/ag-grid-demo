@@ -3,6 +3,9 @@ import { Component } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular'; // Angular Data Grid Component
 import type { ColDef } from 'ag-grid-community'; // Column Definition Type Interface
 import { AllCommunityModule, ClientSideRowModelModule, ModuleRegistry, SelectEditorModule, ValidationModule } from 'ag-grid-community';
+import { AutocompleteSelectCellEditor } from "ag-grid-autocomplete-editor";
+import 'ag-grid-autocomplete-editor/dist/main.css';
+import { CustomEditorModule } from 'ag-grid-community';
 
 // Row Data Interface
 interface IRow {
@@ -15,6 +18,7 @@ interface IRow {
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   SelectEditorModule,
+  CustomEditorModule,
   ValidationModule /* Development Only */,]);
 @Component({
   selector: 'app-root',
@@ -23,37 +27,62 @@ ModuleRegistry.registerModules([
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
+  govs = [
+    { label: '(1111) Tacoma', value: '1111' },
+    { label: '(0000) Seattle', value: '0000' },
+    { label: '(5555) Olympia', value: '5555' },
+  ]
+
+  dataToChange = [
+    { population: 500, gov: '1111' },
+    { population: 200, gov: '0000' },
+    { population: 3000, gov: '0000' },
+  ]
   public columnDefs: ColDef[] = [
     {
-      headerName: "Select Editor",
-      field: "government",
-      cellRenderer: (p: any) => {
-
-        return `(${p.data.language.mcag}) hello`;
-      },
-      cellEditor: "agSelectCellEditor",
-      cellEditorParams: {
-        values: languages,
-        cellRenderer: (p: any) => {
-          console.log(p);
-          return `hello`;
-        },
-
-      },
+      field: 'population'
     },
+    {
+      headerName: "Government",
+      field: "gov",
+      cellEditor: AutocompleteSelectCellEditor,
+      cellEditorParams: {
+        selectData: this.govs,
+      },
+      valueFormatter: (params) => {
+        return this.govs.find(g => g.value === params.value)?.label ?? '';
+      },
+      valueGetter: params => {
+        return params.data.gov;
+      },
+      valueSetter: params => {
+        params.data.gov = params.newValue.value;
+        return true;
+      },
+      editable: true,
+    },
+    // {
+    //   headerName: "Government",
+    //   field: "gov",
+    //   cellEditor: 'agSelectCellEditor',
+    //   cellEditorParams: {
+    //     values: this.govs.map((d) => d.label),
+    //   },
+    //   valueFormatter: (params) => {
+    //     return this.govs.find(g => g.value === params.value)?.label ?? '';
+    //   },
+    //   valueGetter: params => {
+    //     return params.data.gov;
+    //   },
+    //   valueSetter: params => {
+    //     console.log(params);
+    //     params.data.gov = params.newValue;
+    //     return true;
+    //   },
+    //   editable: true,
+    // }
   ];
-  public defaultColDef: ColDef = {
-    width: 200,
-    editable: true,
-  };
-  public rowData: any[] | null = new Array(100)
-    .fill(null)
-    .map(() => ({ language: languages[getRandomNumber(0, 2)] }));
 }
 
-const languages = [{mcag: '1200'}, {mcag: '1300'}];
-function getRandomNumber(min: number, max: number) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
+
 
